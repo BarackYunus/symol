@@ -1,0 +1,1 @@
+//a button at bottom of every post to buy that post
