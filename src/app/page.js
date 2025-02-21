@@ -1,35 +1,47 @@
-"use client";
+"use client"; 
+import { useState, useEffect } from "react";
+import Image from "next/image";
+import LoginPage from "./login/page";
 
-import { useEffect, useState } from "react";
-import { useRouter } from "next/navigation";
+const BlinkingImage = ({ onComplete }) => {
+  const [visible, setVisible] = useState(true);
+  const [count, setCount] = useState(0);
+  const maxBlinks = 6; // Adjust number of blinks
 
-const MainPage = () => {
-    const router = useRouter();
-    const [visible, setVisible] = useState(true);
+  useEffect(() => {
+    const interval = setInterval(() => {
+      setVisible((prev) => !prev);
+      setCount((prev) => prev + 1);
+    }, 500); // Adjust blinking speed
 
-    useEffect(() => {
-        // Make image blink for 3 seconds, then redirect
-        const interval = setInterval(() => {
-            setVisible((prev) => !prev);
-        }, 500); // Blink every 500ms
+    if (count >= maxBlinks) {
+      clearInterval(interval);
+      setTimeout(onComplete, 500); // Proceed to login page after blinking
+    }
 
-        setTimeout(() => {
-            clearInterval(interval);
-            router.push("/login"); // Redirect to login page
-        }, 3000); // Stop after 3 seconds
+    return () => clearInterval(interval);
+  }, [count]);
 
-        return () => clearInterval(interval);
-    }, [router]);
-
-    return (
-        <div className="main-container">
-            <img
-                src="/favicon.png"
-                alt="Symbol"
-                className={`blinking-image ${visible ? "visible" : "hidden"}`}
-            />
-        </div>
-    );
+  return (
+    <div className="blinking-container">
+      <Image
+        src="/favicon.png"
+        alt="Blinking Logo"
+        width={100}
+        height={100}
+        style={{ opacity: visible ? 1 : 0, transition: "opacity 0.5s" }}
+        priority
+      />
+    </div>
+  );
 };
 
-export default MainPage;
+export default function MainPage() {
+  const [showLogin, setShowLogin] = useState(false);
+
+  return showLogin ? (
+    <LoginPage /> // Replace with your login component
+  ) : (
+    <BlinkingImage onComplete={() => setShowLogin(true)} />
+  );
+}
