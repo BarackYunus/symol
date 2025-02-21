@@ -1,0 +1,21 @@
+.main-container {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    height: 100vh;
+    background-color: black;
+}
+
+.blinking-image {
+    width: 150px; /* Adjust size */
+    height: auto;
+    transition: opacity 0.2s ease-in-out;
+}
+
+.hidden {
+    opacity: 0;
+}
+
+.visible {
+    opacity: 1;
+}
