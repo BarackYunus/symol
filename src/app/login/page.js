@@ -50,7 +50,7 @@ const LoginPage = () => {
         <button type="submit">Login</button>
       </form>
       <p>
-        Have you not an account? <Link href="/signup">Sign up</Link>
+        Tf bro, never heard of symol? <Link href="/signup">Sign up</Link>
       </p>
     </div>
   );
