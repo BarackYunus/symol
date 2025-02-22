@@ -1,8 +1,10 @@
 "use client";
-import React, { useState } from "react";
+import React, { useState, useEffect } from "react";
 import { useRouter } from "next/navigation";
-import checkUsernameAvailability from "/lib/checkUsernameAvailability";
-import connectWallet from "/lib/tonWalletConnect";
+import checkUsernameAvailability from "./lib/checkUsernameAvailability";
+import connectWallet from "./lib/tonWalletConnect";
+import { addUsernameListener } from "./lib/checkUsernameAvailability";
+import "./signup.css";
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -12,9 +14,14 @@ const Signup = () => {
         phoneNumber: "",
         profilePicture: null,
     });
+
     const [usernameAvailable, setUsernameAvailable] = useState(null);
     const [loading, setLoading] = useState(false);
     const router = useRouter();
+
+    useEffect(() => {
+        addUsernameListener(handleUsernameChange);
+    }, []);
 
     const handleChange = (e) => {
         const { name, value } = e.target;
@@ -22,10 +29,19 @@ const Signup = () => {
     };
 
     const handleUsernameChange = async (e) => {
-        const value = e.target.value;
-        setFormData((prev) => ({ ...prev, username: value }));
-        if (!value) return setUsernameAvailable(null);
+        let value = e.target.value;
         
+        // Allow only letters, numbers, and underscores (no spaces or special characters)
+        const validUsername = /^[a-zA-Z0-9_]*$/;
+        
+        if (!validUsername.test(value)) {
+            return; // Prevent invalid characters from being set
+        }
+
+        setFormData((prev) => ({ ...prev, username: value }));
+
+        if (!value) return setUsernameAvailable(null);
+
         setLoading(true);
         try {
             const available = await checkUsernameAvailability(value);
@@ -46,15 +62,15 @@ const Signup = () => {
             alert("Please fill in all required fields.");
             return;
         }
-        
+
         if (usernameAvailable === false) {
             alert("Username is already taken.");
             return;
         }
-        
+
         // Store information in the database (mock logic)
         console.log("Signup data:", formData);
-        
+
         router.push("/explore/page.js");
     };
 
