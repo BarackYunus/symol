@@ -4,7 +4,9 @@ import { useRouter } from "next/navigation";
 import checkUsernameAvailability from "./lib/checkUsernameAvailability";
 import connectWallet from "./lib/tonWalletConnect";
 import { addUsernameListener } from "./lib/checkUsernameAvailability";
+import countryData from "./lib/countryData";
 import "./signup.css";
+import Image from "next/image";
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -12,11 +14,15 @@ const Signup = () => {
         username: "",
         gender: "",
         phoneNumber: "",
+        country: "",
+        countryCode: "",
         profilePicture: null,
+        profilePreview: "default_silhouette.png"
     });
 
     const [usernameAvailable, setUsernameAvailable] = useState(null);
     const [loading, setLoading] = useState(false);
+    const [filteredCountries, setFilteredCountries] = useState([]);
     const router = useRouter();
 
     useEffect(() => {
@@ -30,16 +36,10 @@ const Signup = () => {
 
     const handleUsernameChange = async (e) => {
         let value = e.target.value;
-        
-        // Allow only letters, numbers, and underscores (no spaces or special characters)
         const validUsername = /^[a-zA-Z0-9_]*$/;
-        
-        if (!validUsername.test(value)) {
-            return; // Prevent invalid characters from being set
-        }
+        if (!validUsername.test(value)) return;
 
         setFormData((prev) => ({ ...prev, username: value }));
-
         if (!value) return setUsernameAvailable(null);
 
         setLoading(true);
@@ -54,81 +54,93 @@ const Signup = () => {
     };
 
     const handleFileChange = (e) => {
-        setFormData((prev) => ({ ...prev, profilePicture: e.target.files[0] }));
+        const file = e.target.files[0];
+        if (file) {
+            const reader = new FileReader();
+            reader.onload = (event) => {
+                setFormData((prev) => ({ ...prev, profilePicture: file, profilePreview: event.target.result }));
+            };
+            reader.readAsDataURL(file);
+        }
+    };
+
+    const handleCountryChange = (e) => {
+        const query = e.target.value;
+        setFormData((prev) => ({ ...prev, country: query }));
+        
+        if (query) {
+            const matches = countryData.filter(c => c.name.toLowerCase().startsWith(query.toLowerCase()));
+            setFilteredCountries(matches);
+        } else {
+            setFilteredCountries([]);
+        }
+    };
+
+    const selectCountry = (country) => {
+        setFormData({
+            ...formData,
+            country: country.name,
+            countryCode: country.code
+        });
+        setFilteredCountries([]);
     };
 
     const handleSignup = async () => {
-        if (!formData.name || !formData.username || !formData.gender || !formData.phoneNumber) {
+        if (!formData.name || !formData.username || !formData.gender || !formData.phoneNumber || !formData.country) {
             alert("Please fill in all required fields.");
             return;
         }
-
         if (usernameAvailable === false) {
             alert("Username is already taken.");
             return;
         }
-
-        // Store information in the database (mock logic)
         console.log("Signup data:", formData);
-
         router.push("/explore/page.js");
     };
 
     return (
-        <div>
+        <div className="signup-container">
             <h1>Signup</h1>
-            <div>
+            <div className="input-group">
                 <label>Name:</label>
                 <input type="text" name="name" value={formData.name} onChange={handleChange} required />
             </div>
-            <div>
+            <div className="input-group">
                 <label>Username:</label>
-                <input
-                    type="text"
-                    name="username"
-                    value={formData.username}
-                    onChange={handleUsernameChange}
-                    className={usernameAvailable === false ? "shake" : ""}
-                    required
-                />
+                <input type="text" name="username" value={formData.username} onChange={handleUsernameChange} required />
                 {loading && <p>Checking availability...</p>}
                 {usernameAvailable === false && <p style={{ color: "red" }}>Username is taken</p>}
                 {usernameAvailable === true && <p style={{ color: "green" }}>Username is available</p>}
             </div>
-            <div>
-                <label>Gender:</label>
-                <select name="gender" value={formData.gender} onChange={handleChange} required>
-                    <option value="">Select Gender</option>
-                    <option value="male">Male</option>
-                    <option value="female">Female</option>
-                </select>
+            <div className="input-group">
+                <label>Country:</label>
+                <input type="text" name="country" value={formData.country} onChange={handleCountryChange} placeholder="Type to search..." required />
+                {filteredCountries.length > 0 && (
+                    <ul className="dropdown">
+                        {filteredCountries.map((country) => (
+                            <li key={country.code} onClick={() => selectCountry(country)}>{country.name}</li>
+                        ))}
+                    </ul>
+                )}
             </div>
-            <div>
-                <label>Phone Number:</label>
-                <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
+            <div className="phone-group">
+                <div className="input-group country-code">
+                    <Image src={`https://flagcdn.com/w40/${formData.countryCode.toLowerCase()}.png`} alt="" className="flag-icon" width={10} height={10} />
+                    <input type="text" value={`+${formData.countryCode}`} readOnly />
+                </div>
+                <div className="input-group phone-number">
+                    <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
+                </div>
             </div>
-            <div>
+            <div className="input-group">
                 <label>Profile Picture:</label>
-                <input type="file" onChange={handleFileChange} />
+                <input type="file" id="profile-upload" onChange={handleFileChange} style={{ display: "none" }} />
+                <label htmlFor="profile-upload">
+                    <Image src={formData.profilePreview} alt="Profile Preview" className="profile-preview" width={50} height={50} />
+                </label>
             </div>
-            <div>
-                <button onClick={connectWallet}>Connect Wallet</button>
-            </div>
-            <div>
-                <button onClick={handleSignup}>Signup</button>
-            </div>
-            <style jsx>{`
-                .shake {
-                    animation: shake 0.5s;
-                    animation-iteration-count: 3;
-                }
-                @keyframes shake {
-                    0%, 100% { transform: translateX(0); }
-                    25% { transform: translateX(-5px); }
-                    50% { transform: translateX(5px); }
-                    75% { transform: translateX(-5px); }
-                }
-            `}</style>
+            <button onClick={handleSignup}>Signup</button>
+            <button className="wallet-button" onClick={connectWallet}>Connect Wallet</button>
         </div>
     );
 };

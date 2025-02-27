@@ -19,7 +19,7 @@ const LoginPage = () => {
   return (
     <div className="login-container">
       <Image src="/favicon.png" alt="Your Image" width={100} height={100} />
-      <h1 className="title">symol</h1>
+      <h1 className="title">Symol</h1>
       <form onSubmit={handleLogin}>
         <div className="input-group">
           <label htmlFor="phoneOrUsername">Phone Number/Username</label>
