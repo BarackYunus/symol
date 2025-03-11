@@ -15,9 +15,8 @@ const Signup = () => {
         gender: "",
         phoneNumber: "",
         country: "",
-        countryCode: "",
         profilePicture: null,
-        profilePreview: "default_silhouette.png"
+        profilePreview: "/default.png"
     });
 
     const [usernameAvailable, setUsernameAvailable] = useState(null);
@@ -79,8 +78,7 @@ const Signup = () => {
     const selectCountry = (country) => {
         setFormData({
             ...formData,
-            country: country.name,
-            countryCode: country.code
+            country: country.name
         });
         setFilteredCountries([]);
     };
@@ -123,14 +121,9 @@ const Signup = () => {
                     </ul>
                 )}
             </div>
-            <div className="phone-group">
-                <div className="input-group country-code">
-                    <Image src={`https://flagcdn.com/w40/${formData.countryCode.toLowerCase()}.png`} alt="" className="flag-icon" width={10} height={10} />
-                    <input type="text" value={`+${formData.countryCode}`} readOnly />
-                </div>
-                <div className="input-group phone-number">
-                    <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
-                </div>
+            <div className="input-group">
+                <label>Phone Number:</label>
+                <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
             </div>
             <div className="input-group">
                 <label>Profile Picture:</label>
