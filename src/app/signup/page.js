@@ -6,7 +6,6 @@ import connectWallet from "./lib/tonWalletConnect";
 import { addUsernameListener } from "./lib/checkUsernameAvailability";
 import countryData from "./lib/countryData";
 import "./signup.css";
-import Image from "next/image";
 
 const Signup = () => {
     const [formData, setFormData] = useState({
@@ -14,9 +13,7 @@ const Signup = () => {
         username: "",
         gender: "",
         phoneNumber: "",
-        country: "",
-        profilePicture: null,
-        profilePreview: "/default.png"
+        country: ""
     });
 
     const [usernameAvailable, setUsernameAvailable] = useState(null);
@@ -50,17 +47,6 @@ const Signup = () => {
             setUsernameAvailable(null);
         }
         setLoading(false);
-    };
-
-    const handleFileChange = (e) => {
-        const file = e.target.files[0];
-        if (file) {
-            const reader = new FileReader();
-            reader.onload = (event) => {
-                setFormData((prev) => ({ ...prev, profilePicture: file, profilePreview: event.target.result }));
-            };
-            reader.readAsDataURL(file);
-        }
     };
 
     const handleCountryChange = (e) => {
@@ -124,13 +110,6 @@ const Signup = () => {
             <div className="input-group">
                 <label>Phone Number:</label>
                 <input type="tel" name="phoneNumber" value={formData.phoneNumber} onChange={handleChange} required />
-            </div>
-            <div className="input-group">
-                <label>Profile Picture:</label>
-                <input type="file" id="profile-upload" onChange={handleFileChange} style={{ display: "none" }} />
-                <label htmlFor="profile-upload">
-                    <Image src={formData.profilePreview} alt="Profile Preview" className="profile-preview" width={50} height={50} />
-                </label>
             </div>
             <button onClick={handleSignup}>Signup</button>
             <button className="wallet-button" onClick={connectWallet}>Connect Wallet</button>
