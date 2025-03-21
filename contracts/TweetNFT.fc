@@ -1,0 +1,162 @@
+#include "imports/stdlib.fc";
+
+;; Storage variables
+global int total_supply;
+global cell tweets;  ;; Dictionary of tweet_id -> tweet_data
+global cell owners;  ;; Dictionary of tweet_id -> owner_address
+
+;; Messages
+const int op::mint = 1;
+const int op::transfer = 2;
+const int op::list_for_sale = 3;
+const int op::buy = 4;
+
+() save_data() impure {
+    set_data(begin_cell()
+        .store_uint(total_supply, 32)
+        .store_dict(tweets)
+        .store_dict(owners)
+    .end_cell());
+}
+
+(int, cell, cell) load_data() inline {
+    slice ds = get_data().begin_parse();
+    return (
+        ds~load_uint(32),  ;; total_supply
+        ds~load_dict(),    ;; tweets
+        ds~load_dict()     ;; owners
+    );
+}
+
+() mint_tweet(slice content, slice owner_address) impure {
+    (int ts, cell t, cell o) = load_data();
+    
+    ;; Create tweet data
+    cell tweet_data = begin_cell()
+        .store_slice(content)
+        .store_slice(owner_address)
+        .store_uint(0, 1)  ;; not for sale
+        .store_coins(0)    ;; price
+    .end_cell();
+    
+    t~udict_set(32, ts, tweet_data.begin_parse());
+    o~udict_set(32, ts, begin_cell().store_slice(owner_address).end_cell().begin_parse());
+    
+    total_supply = ts + 1;
+    tweets = t;
+    owners = o;
+    save_data();
+}
+
+() transfer_tweet(int tweet_id, slice from_address, slice to_address) impure {
+    (int ts, cell t, cell o) = load_data();
+    
+    ;; Check ownership
+    slice owner_data = o~udict_get?(32, tweet_id);
+    throw_unless(401, owner_data~load_msg_addr() == from_address);
+    
+    ;; Update ownership
+    o~udict_set(32, tweet_id, begin_cell().store_slice(to_address).end_cell().begin_parse());
+    
+    ;; Update tweet data with new owner
+    slice tweet_data = t~udict_get?(32, tweet_id);
+    cell new_tweet_data = begin_cell()
+        .store_slice(tweet_data~load_msg_body())  ;; content
+        .store_slice(to_address)                  ;; new owner
+        .store_uint(0, 1)                         ;; not for sale
+        .store_coins(0)                           ;; reset price
+    .end_cell();
+    
+    t~udict_set(32, tweet_id, new_tweet_data.begin_parse());
+    
+    tweets = t;
+    owners = o;
+    save_data();
+}
+
+() list_for_sale(int tweet_id, int price, slice owner_address) impure {
+    (int ts, cell t, cell o) = load_data();
+    
+    ;; Check ownership
+    slice owner_data = o~udict_get?(32, tweet_id);
+    throw_unless(401, owner_data~load_msg_addr() == owner_address);
+    
+    ;; Update tweet data with sale info
+    slice tweet_data = t~udict_get?(32, tweet_id);
+    cell new_tweet_data = begin_cell()
+        .store_slice(tweet_data~load_msg_body())  ;; content
+        .store_slice(owner_address)               ;; owner
+        .store_uint(1, 1)                         ;; for sale
+        .store_coins(price)                       ;; price
+    .end_cell();
+    
+    t~udict_set(32, tweet_id, new_tweet_data.begin_parse());
+    tweets = t;
+    save_data();
+}
+
+() buy_tweet(int tweet_id, slice buyer_address, int msg_value) impure {
+    (int ts, cell t, cell o) = load_data();
+    
+    ;; Get tweet data
+    slice tweet_data = t~udict_get?(32, tweet_id);
+    slice content = tweet_data~load_msg_body();
+    slice current_owner = tweet_data~load_msg_addr();
+    int is_for_sale = tweet_data~load_uint(1);
+    int price = tweet_data~load_coins();
+    
+    ;; Verify sale conditions
+    throw_unless(402, is_for_sale);
+    throw_unless(403, msg_value >= price);
+    
+    ;; Transfer ownership
+    transfer_tweet(tweet_id, current_owner, buyer_address);
+    
+    ;; Send payment to seller
+    var msg = begin_cell()
+        .store_uint(0x10, 6)           ;; nobounce
+        .store_slice(current_owner)     ;; seller address
+        .store_coins(price)            ;; amount
+        .store_uint(0, 1 + 4 + 4 + 64 + 32 + 1 + 1)
+        .store_uint(0, 32)
+        .store_slice("Tweet sold successfully");
+    send_raw_message(msg.end_cell(), 1);
+}
+
+() recv_internal(int msg_value, cell in_msg_full, slice in_msg_body) impure {
+    if (in_msg_body.slice_empty?()) { return (); }
+    
+    slice cs = in_msg_full.begin_parse();
+    int flags = cs~load_uint(4);
+    slice sender_address = cs~load_msg_addr();
+    
+    int op = in_msg_body~load_uint(32);
+    
+    if (op == op::mint) {
+        slice content = in_msg_body~load_msg_body();
+        mint_tweet(content, sender_address);
+        return ();
+    }
+    
+    if (op == op::transfer) {
+        int tweet_id = in_msg_body~load_uint(32);
+        slice to_address = in_msg_body~load_msg_addr();
+        transfer_tweet(tweet_id, sender_address, to_address);
+        return ();
+    }
+    
+    if (op == op::list_for_sale) {
+        int tweet_id = in_msg_body~load_uint(32);
+        int price = in_msg_body~load_coins();
+        list_for_sale(tweet_id, price, sender_address);
+        return ();
+    }
+    
+    if (op == op::buy) {
+        int tweet_id = in_msg_body~load_uint(32);
+        buy_tweet(tweet_id, sender_address, msg_value);
+        return ();
+    }
+    
+    throw(0xffff); ;; Unknown operation
+} 

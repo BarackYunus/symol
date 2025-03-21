@@ -6,12 +6,12 @@ import connectWallet from "./lib/tonWalletConnect";
 import { addUsernameListener } from "./lib/checkUsernameAvailability";
 import countryData from "./lib/countryData";
 import "./signup.css";
+import Image from "next/image";
 
 const Signup = () => {
     const [formData, setFormData] = useState({
         name: "",
         username: "",
-        gender: "",
         phoneNumber: "",
         country: ""
     });
@@ -70,7 +70,9 @@ const Signup = () => {
     };
 
     const handleSignup = async () => {
-        if (!formData.name || !formData.username || !formData.gender || !formData.phoneNumber || !formData.country) {
+        const { name, username, phoneNumber, country } = formData;
+
+        if (!name || !username || !phoneNumber || !country) {
             alert("Please fill in all required fields.");
             return;
         }
@@ -78,6 +80,7 @@ const Signup = () => {
             alert("Username is already taken.");
             return;
         }
+
         console.log("Signup data:", formData);
         router.push("/explore/page.js");
     };

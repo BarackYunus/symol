@@ -1,47 +1,57 @@
 "use client"; 
 import { useState, useEffect } from "react";
-import Image from "next/image";
-import LoginPage from "./login/page";
+import { TonConnectButton } from '@tonconnect/ui-react';
+import Tweet from '@/components/Tweet';
+import { initTonClient } from '@/lib/ton';
+import { getUserData } from '@/lib/telegram';
 
-const BlinkingImage = ({ onComplete }) => {
-  const [visible, setVisible] = useState(true);
-  const [count, setCount] = useState(0);
-  const maxBlinks = 6; // Adjust number of blinks
+export default function Home() {
+  const [tweets, setTweets] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const user = getUserData();
 
   useEffect(() => {
-    const interval = setInterval(() => {
-      setVisible((prev) => !prev);
-      setCount((prev) => prev + 1);
-    }, 500); // Adjust blinking speed
+    const fetchTweets = async () => {
+      try {
+        const client = await initTonClient();
+        // TODO: Implement fetching tweets from smart contract
+        // For now, using mock data
+        setTweets([
+          {
+            id: 1,
+            content: 'Hello TON!',
+            owner: 'EQA...',
+            price: 10,
+            isForSale: true,
+          },
+          // Add more mock tweets
+        ]);
+      } catch (error) {
+        console.error('Error fetching tweets:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
 
-    if (count >= maxBlinks) {
-      clearInterval(interval);
-      setTimeout(onComplete, 500); // Proceed to login page after blinking
-    }
-
-    return () => clearInterval(interval);
-  }, [count]);
+    fetchTweets();
+  }, []);
 
   return (
-    <div className="blinking-container">
-      <Image
-        src="/favicon.png"
-        alt="Blinking Logo"
-        width={100}
-        height={100}
-        style={{ opacity: visible ? 1 : 0, transition: "opacity 0.5s" }}
-        priority
-      />
-    </div>
-  );
-};
+    <main className="container mx-auto px-4 py-8">
+      <div className="flex justify-between items-center mb-8">
+        <h1 className="text-2xl font-bold">Welcome, {user?.username || 'Guest'}</h1>
+        <TonConnectButton />
+      </div>
 
-export default function MainPage() {
-  const [showLogin, setShowLogin] = useState(false);
-
-  return showLogin ? (
-    <LoginPage /> // Replace with your login component
-  ) : (
-    <BlinkingImage onComplete={() => setShowLogin(true)} />
+      {loading ? (
+        <p>Loading tweets...</p>
+      ) : (
+        <div className="space-y-4">
+          {tweets.map((tweet) => (
+            <Tweet key={tweet.id} {...tweet} />
+          ))}
+        </div>
+      )}
+    </main>
   );
 }
