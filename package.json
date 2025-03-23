@@ -9,23 +9,23 @@
     "lint": "next lint"
   },
   "dependencies": {
-    "@tonconnect/ui-react": "^2.0.0",
     "@orbs-network/ton-access": "^2.3.3",
     "@ton/core": "^0.53.0",
     "@ton/crypto": "^3.2.0",
     "@ton/ton": "^13.9.0",
+    "@tonconnect/ui-react": "^2.0.0",
     "@twa-dev/sdk": "^6.9.1",
-    "mongoose": "^8.12.1",
-    "next": "15.1.7",
-    "react": "^19.0.0",
-    "react-dom": "^19.0.0",
-    "buffer": "^6.0.3"
+    "buffer": "^6.0.3",
+    "mongoose": "^8.0.3",
+    "next": "14.0.4",
+    "prop-types": "^15.8.1",
+    "react": "18.2.0",
+    "react-dom": "18.2.0"
   },
   "devDependencies": {
-    "@eslint/eslintrc": "^3",
-    "eslint": "^9",
-    "eslint-config-next": "15.1.7",
-    "postcss": "^8",
+    "eslint": "^8.56.0",
+    "eslint-config-next": "14.0.4",
+    "postcss": "^8.4.32",
     "tailwindcss": "^3.4.1"
   }
 }

@@ -1,6 +1,7 @@
 'use client';
 
 import { useState } from 'react';
+import PropTypes from 'prop-types';
 import { useTonConnect } from '@tonconnect/ui-react';
 import { showAlert, showConfirm } from '@/lib/telegram';
 import { getBalance, sendTransaction, listTweetForSale } from '@/lib/ton';
@@ -71,6 +72,49 @@ export default function Tweet({ id, content, owner, price, isForSale }) {
     }
   };
   
+  const renderSellButton = () => {
+    if (wallet?.account.address !== owner) return null;
+    
+    if (showPriceInput) {
+      return (
+        <div className="flex items-center space-x-2">
+          <input
+            type="number"
+            value={sellPrice}
+            onChange={(e) => setSellPrice(e.target.value)}
+            placeholder="Price in TON"
+            className="border rounded px-2 py-1 w-32"
+            step="0.1"
+            min="0"
+          />
+          <button
+            onClick={handlePriceSubmit}
+            disabled={loading}
+            className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+          >
+            {loading ? 'Processing...' : 'Confirm'}
+          </button>
+          <button
+            onClick={() => setShowPriceInput(false)}
+            className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
+          >
+            Cancel
+          </button>
+        </div>
+      );
+    }
+
+    return (
+      <button
+        onClick={handleSell}
+        disabled={loading}
+        className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
+      >
+        Sell Tweet
+      </button>
+    );
+  };
+  
   return (
     <div className="border rounded-lg p-4 mb-4">
       <p className="text-lg mb-2">{content}</p>
@@ -84,45 +128,16 @@ export default function Tweet({ id, content, owner, price, isForSale }) {
           >
             {loading ? 'Processing...' : `Buy for ${price} TON`}
           </button>
-        ) : (
-          wallet?.account.address === owner && (
-            showPriceInput ? (
-              <div className="flex items-center space-x-2">
-                <input
-                  type="number"
-                  value={sellPrice}
-                  onChange={(e) => setSellPrice(e.target.value)}
-                  placeholder="Price in TON"
-                  className="border rounded px-2 py-1 w-32"
-                  step="0.1"
-                  min="0"
-                />
-                <button
-                  onClick={handlePriceSubmit}
-                  disabled={loading}
-                  className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-                >
-                  {loading ? 'Processing...' : 'Confirm'}
-                </button>
-                <button
-                  onClick={() => setShowPriceInput(false)}
-                  className="bg-gray-500 text-white px-4 py-2 rounded hover:bg-gray-600"
-                >
-                  Cancel
-                </button>
-              </div>
-            ) : (
-              <button
-                onClick={handleSell}
-                disabled={loading}
-                className="bg-green-500 text-white px-4 py-2 rounded hover:bg-green-600 disabled:opacity-50"
-              >
-                Sell Tweet
-              </button>
-            )
-          )
-        )}
+        ) : renderSellButton()}
       </div>
     </div>
   );
-} 
+}
+
+Tweet.propTypes = {
+  id: PropTypes.number.isRequired,
+  content: PropTypes.string.isRequired,
+  owner: PropTypes.string.isRequired,
+  price: PropTypes.number.isRequired,
+  isForSale: PropTypes.bool.isRequired
+}; 

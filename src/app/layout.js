@@ -1,34 +1,30 @@
-'use client';
-
-import { useEffect } from 'react';
 import Script from 'next/script';
-import { initTelegramApp } from '@/lib/telegram';
-import { TonConnectUIProvider } from '@tonconnect/ui-react';
+import Providers from '@/components/Providers';
+import './globals.css';
 
 export const metadata = {
   title: "Symol",
   description: "A cool app",
-  icons: "/favicon.ico",
+  icons: {
+    icon: "/favicon.ico",
+  },
+  viewport: {
+    width: 'device-width',
+    initialScale: 1,
+    maximumScale: 1,
+  },
 };
 
 export default function RootLayout({ children }) {
-  useEffect(() => {
-    // Initialize Telegram Mini App
-    initTelegramApp();
-  }, []);
-
   return (
     <html lang="en">
       <head>
-        <title>{metadata.title}</title>
-        <meta name="description" content={metadata.description} />
-        <link rel="icon" href= "favicon.png"/>
         <Script src="https://telegram.org/js/telegram-web-app.js" strategy="beforeInteractive" />
       </head>
       <body>
-        <TonConnectUIProvider manifestUrl="https://your-app-domain.com/tonconnect-manifest.json">
+        <Providers>
           {children}
-        </TonConnectUIProvider>
+        </Providers>
       </body>
     </html>
   );
